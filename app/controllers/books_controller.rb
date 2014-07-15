@@ -1,32 +1,32 @@
 class BooksController < ApplicationController
-	before_action :authorize
+  before_action :authorize
+  before_action :find_book, except: [:index, :new, :create]
   
   def index
-    @books = Book.where(user_id: current_user.id)
+    @books = current_user.books
   end
 
   def show
-    @book = find_book
   end
 
   def new
-    @book = Book.new
+    @book = current_user.books.build
   end
 
   def create
-    @book = Book.new book_params
-    @book.user_id = current_user.id
-    @book.save 
-    flash[:notice] = "#{@book.title} was successfully created."
-    redirect_to books_url  
+    @book = current_user.books.build book_params
+    if @book.save 
+      flash[:notice] = "#{@book.title} was successfully created."
+      redirect_to books_url
+    else
+      render 'new'
+    end
   end
 
   def edit
-    @book = find_book
   end
 
   def update
-    @book = find_book
     @book.update_attributes!(book_params)
     @book.save
     flash[:notice] = "#{@book.title} was successfully updated."
@@ -34,7 +34,6 @@ class BooksController < ApplicationController
   end
  
   def destroy
-    @book = find_book
     @book.destroy
     flash[:notice] = "Book '#{@book.title}' deleted."
     redirect_to books_url
@@ -43,12 +42,11 @@ class BooksController < ApplicationController
   private
 
   def find_book
-    Book.find(params[:id])
+    @book = current_user.books.find(params[:id])
   end
 
   def book_params
-    fields = [params[:book].permit(:title, :author, :published_at, :description, :rating)]
-    params.require(:book).permit(fields)
+    params.require(:book).permit(:title, :author, :published_at, :description, :rating)
   end
 
 end
